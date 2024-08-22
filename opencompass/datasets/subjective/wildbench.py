@@ -3,6 +3,7 @@ import json
 from datasets import Dataset, DatasetDict
 
 from opencompass.registry import LOAD_DATASET
+from opencompass.utils import get_data_path
 
 from ..base import BaseDataset
 
@@ -209,7 +210,8 @@ def parse_conversation(conversation):
 @LOAD_DATASET.register_module()
 class WildBenchDataset(BaseDataset):
 
-    def load(self, path: str, K=-1, mode='pair'):
+    def load(self, path: str, K=-1, eval_mode='pair', *args, **kwargs):
+        path = get_data_path(path, local_mode=True)
         dataset = DatasetDict()
         raw_data = []
         with open(path, 'r', encoding='utf-8') as file:
@@ -222,13 +224,13 @@ class WildBenchDataset(BaseDataset):
                 for checklist_item in item['checklist']:
                     checklist_mardkdown += f'- {checklist_item}\n'
 
-                if mode == 'single':
+                if eval_mode == 'single':
                     prompt = score_prompt
-                elif mode == 'pair':
+                elif eval_mode == 'pair':
                     prompt = pair_prompt
                 else:
                     assert NotImplementedError(
-                        f'Mode {mode} not in single or pair.')
+                        f'Eval mode {eval_mode} not in single or pair.')
 
                 prompt = prompt.replace('{history}', history)
                 prompt = prompt.replace('{user_query}', last_query)
