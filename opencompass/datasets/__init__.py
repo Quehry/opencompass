@@ -48,6 +48,7 @@ from .gpqa import *  # noqa: F401, F403
 from .gsm8k import *  # noqa: F401, F403
 from .gsm_hard import *  # noqa: F401, F403
 from .hellaswag import *  # noqa: F401, F403
+from .hl_bench import *  # noqa: F401, F403
 from .huggingface import *  # noqa: F401, F403
 from .humaneval import *  # noqa: F401, F403
 from .humanevalx import *  # noqa: F401, F403
