@@ -175,6 +175,7 @@ class HuggingFacewithChatTemplate(BaseModel):
         self._load_tokenizer(tokenizer_path or path, tokenizer_kwargs, pad_token_id)
         if not tokenizer_only:
             self._load_model(path=path, kwargs=model_kwargs, peft_path=peft_path, peft_kwargs=peft_kwargs)
+
         self.generation_kwargs = generation_kwargs
         self.fastchat_template = fastchat_template
         self.stop_words = list(set(stop_words + self._get_potential_stop_words(path)))
@@ -236,7 +237,8 @@ class HuggingFacewithChatTemplate(BaseModel):
             self.model = PeftModel.from_pretrained(self.model, peft_path, **peft_kwargs)
 
         self.model.eval()
-        self.model.generation_config.do_sample = False
+        # self.model.generation_config.do_sample = False
+        # print(self.model.max_new_tokens)
 
 
     def get_ppl_tokenwise(self, inputs: List[str], label: List[List[int]], mask_length: Optional[List[int]] = None) -> List[float]:
@@ -471,6 +473,8 @@ class HuggingFacewithChatTemplate(BaseModel):
         if min_out_len is not None:
             generation_kwargs['min_new_tokens'] = min_out_len
         generation_kwargs['pad_token_id'] = self.tokenizer.pad_token_id
+
+        # print(generation_kwargs)
 
         # step-2: conduct model forward to generate output
         outputs = self.model.generate(**tokens, **generation_kwargs)
