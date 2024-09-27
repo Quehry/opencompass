@@ -7,7 +7,7 @@ from .base import BaseDataset
 
 
 @LOAD_DATASET.register_module()
-class HLDataset(BaseDataset):
+class HelloBenchDataset(BaseDataset):
 
     @staticmethod
     def load(path):
@@ -15,7 +15,7 @@ class HLDataset(BaseDataset):
         return dataset
 
 
-class HLEvaluator(BaseEvaluator):
+class HelloBenchEvaluator(BaseEvaluator):
 
     def score(self):
         return {'score': 0}
