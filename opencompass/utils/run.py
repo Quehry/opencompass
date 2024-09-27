@@ -41,16 +41,18 @@ def match_cfg_file(workdir: Union[str, List[str]],
     if len(files) != len(pattern):
         nomatched = []
         ambiguous = []
+        ambiguous_return_list = []
         err_msg = ('The provided pattern matches 0 or more than one '
                    'config. Please verify your pattern and try again. '
                    'You may use tools/list_configs.py to list or '
                    'locate the configurations.\n')
         for p in pattern:
-            files = _mf_with_multi_workdirs(workdir, p, fuzzy=False)
-            if len(files) == 0:
+            files_ = _mf_with_multi_workdirs(workdir, p, fuzzy=False)
+            if len(files_) == 0:
                 nomatched.append([p[:-3]])
-            elif len(files) > 1:
-                ambiguous.append([p[:-3], '\n'.join(f[1] for f in files)])
+            elif len(files_) > 1:
+                ambiguous.append([p[:-3], '\n'.join(f[1] for f in files_)])
+                ambiguous_return_list.append(files_[0])
         if nomatched:
             table = [['Not matched patterns'], *nomatched]
             err_msg += tabulate.tabulate(table,
@@ -58,12 +60,12 @@ def match_cfg_file(workdir: Union[str, List[str]],
                                          tablefmt='psql')
         if ambiguous:
             table = [['Ambiguous patterns', 'Matched files'], *ambiguous]
-            warning_msg = 'Found ambiguous patterns, using the first matched config.'
+            warning_msg = 'Found ambiguous patterns, using the first matched config.\n'
             warning_msg += tabulate.tabulate(table,
                                          headers='firstrow',
                                          tablefmt='psql')
             logger.warning(warning_msg)
-            return [files[0]]
+            return ambiguous_return_list
 
         raise ValueError(err_msg)
     return files
@@ -115,7 +117,7 @@ def get_config_from_arg(args) -> Config:
     datasets = []
     if args.datasets:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(os.path.dirname(script_dir))
+        parent_dir = os.path.dirname(script_dir)
         default_configs_dir = os.path.join(parent_dir, 'configs')
         datasets_dir = [
             os.path.join(args.config_dir, 'datasets'),
@@ -154,7 +156,7 @@ def get_config_from_arg(args) -> Config:
         raise ValueError('You must specify a config file path, or specify --models and --datasets, or specify HuggingFace model parameters and --datasets.')
     models = []
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(os.path.dirname(script_dir))
+    parent_dir = os.path.dirname(script_dir)
     default_configs_dir = os.path.join(parent_dir, 'configs')
     models_dir = [
         os.path.join(args.config_dir, 'models'),
@@ -162,13 +164,13 @@ def get_config_from_arg(args) -> Config:
 
     ]
     if args.models:
-        # model_dir = os.path.join(args.config_dir, 'models')
-        for model in match_cfg_file(models_dir, args.models):
-            logger.info(f'Loading {model[0]}: {model[1]}')
-            cfg = Config.fromfile(model[1])
-            if 'models' not in cfg:
-                raise ValueError(f'Config file {model[1]} does not contain "models" field')
-            models += cfg['models']
+        for model_arg in args.models:
+            for model in match_cfg_file(models_dir, [model_arg]):
+                logger.info(f'Loading {model[0]}: {model[1]}')
+                cfg = Config.fromfile(model[1])
+                if 'models' not in cfg:
+                    raise ValueError(f'Config file {model[1]} does not contain "models" field')
+                models += cfg['models']
     else:
         if args.hf_type == 'chat':
             mod = HuggingFacewithChatTemplate
@@ -197,7 +199,7 @@ def get_config_from_arg(args) -> Config:
     # parse summarizer args
     summarizer_arg = args.summarizer if args.summarizer is not None else 'example'
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(os.path.dirname(script_dir))
+    parent_dir = os.path.dirname(script_dir)
     default_configs_dir = os.path.join(parent_dir, 'configs')
     summarizers_dir = [
         os.path.join(args.config_dir, 'summarizers'),
